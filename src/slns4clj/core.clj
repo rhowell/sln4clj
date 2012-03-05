@@ -497,6 +497,180 @@
   (is (= (prb-55 [:b :a :b :a :b]) {:a 2, :b 3}))
   (is (= (prb-55 '([1 2] [1 3] [1 3])) {[1 2] 1, [1 3] 2})))
   
+; Problem 56
+(with-test
+  (def prb-56
+    (fn [coll]
+      (loop [coll coll result []]
+        (if (seq coll)
+          (recur (rest coll) (if (some #(= % (first coll)) result)
+                               result
+                               (conj result (first coll))))
+          result))))
+  (is (= (prb-56 [1 2 1 3 1 2 4]) [1 2 3 4]))
+  (is (= (prb-56 [:a :a :b :b :c :c]) [:a :b :c]))
+  (is (= (prb-56 '([2 4] [1 2] [1 3] [1 3])) '([2 4] [1 2] [1 3])))
+  (is (= (prb-56 (range 50)) (range 50))))
+
+; Problem 57
+(with-test
+  (def prb-57 '(5 4 3 2 1))
+  (is (= prb-57 ((fn foo [x] (when (> x 0) (conj (foo (dec x)) x))) 5))))
+
+; Problem 58
+(with-test
+  (def prb-58
+    (fn [& ops]
+      (fn [& data]
+        (loop [ops (reverse ops) data data]
+          (if (seq ops)
+            (recur (rest ops) (apply (juxt (first ops)) data))
+            (first data))))))
+  (is (= [3 2 1] ((prb-58 rest reverse) [1 2 3 4])))
+  (is (= 5 ((prb-58 (partial + 3) second) [1 2 3 4])))
+  (is (= true ((prb-58 zero? #(mod % 8) +) 3 5 7 9)))
+  (is (= "HELLO" ((prb-58 #(.toUpperCase %) #(apply str %) take) 5 "hello world"))))
+
+; Problem 59
+(with-test
+  (def prb-59
+    (fn [& ops]
+      (fn [& data]
+        (for [op ops]
+          (if (seq data)
+            (apply op data)
+            (op data))))))
+  (is (= [21 6 1] ((prb-59 + max min) 2 3 5 1 6 4)))
+  (is (= ["HELLO" 5] ((prb-59 #(.toUpperCase %) count) "hello")))
+  (is (= [2 6 4] ((prb-59 :a :c :b) {:a 2, :b 4, :c 6, :d 8 :e 10}))))
+  
+
+; Problem 61
+(with-test
+  (def prb-61 
+    (fn [ks vs]
+      (let [cnt (if (< (count ks) (count vs))
+                  (count ks)
+                  (count vs))]
+        (into {} (for [x (range cnt)]
+                   [(nth ks x) (nth vs x)])))))
+  (is (= (prb-61 [:a :b :c] [1 2 3]) {:a 1, :b 2, :c 3}))
+  (is (= (prb-61 [1 2 3 4] ["one" "two" "three"]) {1 "one", 2 "two", 3 "three"}))
+  (is (= (prb-61 [:foo :bar] ["foo" "bar" "baz"]) {:foo "foo", :bar "bar"})))
+    
+; Problem 62
+(with-test
+  (def prb-62
+    (fn my-iterate [func init]
+      (lazy-seq (cons init (my-iterate func (func init))))))
+  (is (= (take 5 (prb-62 #(* 2 %) 1)) [1 2 4 8 16]))
+  (is (= (take 100 (prb-62 inc 0)) (take 100 (range))))
+  (is (= (take 9 (prb-62 #(inc (mod % 3)) 1)) (take 9 (cycle [1 2 3])))))
+
+; Problem 66
+(with-test
+  (def prb-66 
+    (fn [a b]
+      (if (== b 0)
+        a
+        (recur b, (mod a b)))))
+  (is (= (prb-66 2 4) 2))
+  (is (= (prb-66 10 5) 5))
+  (is (= (prb-66 5 7) 1))
+  (is (= (prb-66 1023 858) 33)))
+
+; Problem 70
+(with-test
+  (def prb-70
+    (fn [sentence]
+      (let [words (clojure.string/split sentence #"[ .,!]")]
+        (sort #(compare (.toLowerCase %1) 
+                        (.toLowerCase %2)) words))))
+  (is (= (prb-70  "Have a nice day.")
+   ["a" "day" "Have" "nice"]))
+  (is (= (prb-70  "Clojure is a fun language!")
+   ["a" "Clojure" "fun" "is" "language"]))
+  (is (= (prb-70  "Fools fall for foolish follies.")
+   ["fall" "follies" "foolish" "Fools" "for"])))
+  
+; Problem 81
+(with-test
+  (def prb-81
+    (fn [a b]
+      (set (filter a b))))
+  (is (= (prb-81 #{0 1 2 3} #{2 3 4 5}) #{2 3}))
+  (is (= (prb-81 #{0 1 2} #{3 4 5}) #{}))
+  (is (= (prb-81 #{:a :b :c :d} #{:c :e :a :f :d}) #{:a :c :d})))
+  
+; Problem 83
+(with-test
+  (def prb-83
+    (fn [& bools]
+      (= true (and (some #(= % true) bools) (some #(= % false) bools)))))
+  (is (= false (prb-83 false false)))
+  (is (= true (prb-83 true false)))
+  (is (= false (prb-83 true)))
+  (is (= true (prb-83 false true false)))
+  (is (= false (prb-83 true true true)))
+  (is (= true (prb-83 true true true false))))
+  
+; Problem 90
+(with-test
+  (def prb-90
+    (fn [a b]
+      (set 
+      (apply concat (for [ax a]
+        (for [bx b]
+          [ax bx]))))))
+  (is (= (prb-90 #{"ace" "king" "queen"} #{"♠" "♥" "♦" "♣"})
+         #{["ace"   "♠"] ["ace"   "♥"] ["ace"   "♦"] ["ace"   "♣"]
+           ["king"  "♠"] ["king"  "♥"] ["king"  "♦"] ["king"  "♣"]
+           ["queen" "♠"] ["queen" "♥"] ["queen" "♦"] ["queen" "♣"]}))
+  (is (= (prb-90 #{1 2 3} #{4 5})
+         #{[1 4] [2 4] [3 4] [1 5] [2 5] [3 5]}))
+  (is (= 300 (count (prb-90 (into #{} (range 10))
+                            (into #{} (range 30)))))))
+
+; Problem 99
+(with-test
+  (def prb-99
+    (fn [a b]
+      (let [prod (* a b)]
+        (loop [prod prod result '()]
+          (if (> prod 0)
+            (recur (int (/ prod 10)) (conj result (mod prod 10)))
+            result)))))
+  (is (= (prb-99 1 1) [1]))
+  (is (= (prb-99 99 9) [8 9 1]))
+  (is (= (prb-99 999 99) [9 8 9 0 1])))
+
+; Problem 100
+;(with-test
+;  (def prb-100
+;    (fn [& args]
+;      ()))
+;  (is (== (prb-100 2 3) 6))
+;  (is (== (prb-100 5 3 7) 105))
+;  (is (== (prb-100 1/3 2/5) 2))
+;  (is (== (prb-100 3/4 1/6) 3/2))
+;  (is (== (prb-100 7 5/7 2 3/5) 210)))
+
+
+; Problem 107
+(with-test
+  (def prb-107
+    (fn [x]
+      (fn [y]
+        (loop [acc 1 result 1]
+          (if (<= acc x)
+            (recur (inc acc) (* result y))
+            result)))))
+  (is (= 256 ((prb-107 2) 16),
+       ((prb-107 8) 2)))
+  (is (= [1 8 27 64] (map (prb-107 3) [1 2 3 4])))
+  (is (= [1 2 4 8 16] (map #((prb-107 %) 2) [0 1 2 3 4]))))
+
+
 ; Problem 135
 (with-test
   (def prb-135 
